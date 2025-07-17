@@ -271,3 +271,86 @@ void updateAccountInfo(struct User u)
     getchar();
     getchar();
 }
+void checkAccountDetails(struct User u)
+{
+    FILE *fp;
+    struct Record r;
+    int accountId, found = 0;
+    
+    system("clear");
+    printf("\n\n\t\t======= Check Account Details =======\n\n");
+    
+    printf("\n\t\tEnter account ID to check: ");
+    scanf("%d", &accountId);
+    
+    fp = fopen(RECORDS, "r");
+    if (fp == NULL)
+    {
+        printf("Error opening records file!\n");
+        return;
+    }
+    
+    // Read using the format that matches your getAccountFromFile function
+    while (fscanf(fp, "%d %d %s %d %d/%d/%d %s %d %lf %s",
+                  &r.id, &r.userId, r.name, &r.accountNbr,
+                  &r.deposit.month, &r.deposit.day, &r.deposit.year,
+                  r.country, &r.phone, &r.amount, r.accountType) != EOF)
+    {
+        if (r.id == accountId && r.userId == u.id)
+        {
+            found = 1;
+            printf("\n\t\t====== Account Details ======\n");
+            printf("\n\t\tAccount ID: %d", r.id);
+            printf("\n\t\tAccount Number: %d", r.accountNbr);
+            printf("\n\t\tDeposit Date: %d/%d/%d", r.deposit.month, r.deposit.day, r.deposit.year);
+            printf("\n\t\tCountry: %s", r.country);
+            printf("\n\t\tPhone: %d", r.phone);
+            printf("\n\t\tAmount: $%.2f", r.amount);
+            printf("\n\t\tAccount Type: %s", r.accountType);
+            
+            // Calculate and display interest
+            if (strcmp(r.accountType, "savings") == 0)
+            {
+                double monthlyInterest = (r.amount * 0.07) / 12;
+                printf("\n\t\tInterest: You will get $%.2f as interest on day %d of every month", 
+                       monthlyInterest, r.deposit.day);
+            }
+            else if (strcmp(r.accountType, "fixed01") == 0)
+            {
+                double monthlyInterest = (r.amount * 0.04) / 12;
+                printf("\n\t\tInterest: You will get $%.2f as interest on day %d of every month", 
+                       monthlyInterest, r.deposit.day);
+            }
+            else if (strcmp(r.accountType, "fixed02") == 0)
+            {
+                double monthlyInterest = (r.amount * 0.05) / 12;
+                printf("\n\t\tInterest: You will get $%.2f as interest on day %d of every month", 
+                       monthlyInterest, r.deposit.day);
+            }
+            else if (strcmp(r.accountType, "fixed03") == 0)
+            {
+                double monthlyInterest = (r.amount * 0.08) / 12;
+                printf("\n\t\tInterest: You will get $%.2f as interest on day %d of every month", 
+                       monthlyInterest, r.deposit.day);
+            }
+            else if (strcmp(r.accountType, "current") == 0)
+            {
+                printf("\n\t\tInterest: You will not get interests because the account is of type current");
+            }
+            
+            printf("\n\t\t===============================\n");
+            break;
+        }
+    }
+    
+    fclose(fp);
+    
+    if (!found)
+    {
+        printf("\n\t\tAccount not found or doesn't belong to you!\n");
+    }
+    
+    printf("\n\t\tPress Enter to continue...");
+    getchar();
+    getchar();
+}
