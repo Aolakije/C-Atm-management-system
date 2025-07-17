@@ -36,7 +36,7 @@ void loginMenu(char a[50], char pass[50])
 const char *getPassword(struct User u)
 {
     FILE *fp;
-    struct User userChecker;
+    static struct User userChecker;  // Made static to persist after function returns
 
     if ((fp = fopen("./data/users.txt", "r")) == NULL)
     {
@@ -44,20 +44,18 @@ const char *getPassword(struct User u)
         exit(1);
     }
 
-    while (fscanf(fp, "%s %s", userChecker.name, userChecker.password) != EOF)
+    while (fscanf(fp, "%d %s %s", &userChecker.id, userChecker.name, userChecker.password) != EOF)
     {
         if (strcmp(userChecker.name, u.name) == 0)
         {
             fclose(fp);
-            char *buff = userChecker.password;
-            return buff;
+            return userChecker.password;
         }
     }
 
     fclose(fp);
     return "no user found";
 }
-// Add this function to auth.c
 
 void registerMenu(char a[50], char pass[50])
 {
