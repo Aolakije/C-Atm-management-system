@@ -354,3 +354,147 @@ void checkAccountDetails(struct User u)
     getchar();
     getchar();
 }
+
+void makeTransaction(struct User u)
+{
+    FILE *fp, *tempFp;
+    struct Record r;
+    int accountId, transactionType, found = 0;
+    double amount;
+    
+    system("clear");
+    printf("\n\n\t\t======= Make Transaction =======\n\n");
+    
+    printf("\n\t\tEnter account ID for transaction: ");
+    scanf("%d", &accountId);
+    
+    fp = fopen(RECORDS, "r");
+    if (fp == NULL)
+    {
+        printf("Error opening records file!\n");
+        return;
+    }
+    
+    // First, check if account exists and get account details
+    while (fscanf(fp, "%d %d %s %d %d/%d/%d %s %d %lf %s",
+                  &r.id, &r.userId, r.name, &r.accountNbr,
+                  &r.deposit.month, &r.deposit.day, &r.deposit.year,
+                  r.country, &r.phone, &r.amount, r.accountType) != EOF)
+    {
+        if (r.id == accountId && r.userId == u.id)
+        {
+            found = 1;
+            break;
+        }
+    }
+    fclose(fp);
+    
+    if (!found)
+    {
+        printf("\n\t\tAccount not found or doesn't belong to you!\n");
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    // Check if account type allows transactions
+    if (strcmp(r.accountType, "fixed01") == 0 || 
+        strcmp(r.accountType, "fixed02") == 0 || 
+        strcmp(r.accountType, "fixed03") == 0)
+    {
+        printf("\n\t\tError: Transactions are not allowed for fixed accounts!\n");
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    printf("\n\t\tCurrent balance: $%.2f", r.amount);
+    printf("\n\t\tTransaction type:\n");
+    printf("\n\t\t[1] Deposit\n");
+    printf("\n\t\t[2] Withdraw\n");
+    printf("\n\t\tChoice: ");
+    scanf("%d", &transactionType);
+    
+    printf("\n\t\tEnter amount: $");
+    scanf("%lf", &amount);
+    
+    if (amount <= 0)
+    {
+        printf("\n\t\tError: Amount must be positive!\n");
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    if (transactionType == 1) // Deposit
+    {
+        r.amount += amount;
+        printf("\n\t\tDeposit successful! New balance: $%.2f", r.amount);
+    }
+    else if (transactionType == 2) // Withdraw
+    {
+        if (amount > r.amount)
+        {
+            printf("\n\t\tError: Insufficient funds! Current balance: $%.2f", r.amount);
+            printf("\n\t\tPress Enter to continue...");
+            getchar();
+            getchar();
+            return;
+        }
+        r.amount -= amount;
+        printf("\n\t\tWithdrawal successful! New balance: $%.2f", r.amount);
+    }
+    else
+    {
+        printf("\n\t\tError: Invalid transaction type!\n");
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    // Update the file
+    fp = fopen(RECORDS, "r");
+    tempFp = fopen("./data/temp.txt", "w");
+    
+    if (fp == NULL || tempFp == NULL)
+    {
+        printf("Error opening files!\n");
+        return;
+    }
+    
+    struct Record tempR;
+    
+    while (fscanf(fp, "%d %d %s %d %d/%d/%d %s %d %lf %s",
+                  &tempR.id, &tempR.userId, tempR.name, &tempR.accountNbr,
+                  &tempR.deposit.month, &tempR.deposit.day, &tempR.deposit.year,
+                  tempR.country, &tempR.phone, &tempR.amount, tempR.accountType) != EOF)
+    {
+        if (tempR.id == accountId && tempR.userId == u.id)
+        {
+            // Write updated record
+            tempR.amount = r.amount;
+        }
+        
+        fprintf(tempFp, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n",
+                tempR.id, tempR.userId, tempR.name, tempR.accountNbr,
+                tempR.deposit.month, tempR.deposit.day, tempR.deposit.year,
+                tempR.country, tempR.phone, tempR.amount, tempR.accountType);
+    }
+    
+    fclose(fp);
+    fclose(tempFp);
+    
+    // Replace original file with updated file
+    remove(RECORDS);
+    rename("./data/temp.txt", RECORDS);
+    
+    printf("\n\t\tTransaction completed successfully!\n");
+    printf("\n\t\tPress Enter to continue...");
+    getchar();
+    getchar();
+}
+
