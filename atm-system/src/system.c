@@ -206,7 +206,7 @@ void updateAccountInfo(struct User u)
         getchar();
         getchar();
         return;
-    }
+    } 
 
     printf("\n\t\tWhat would you like to update?\n");
     printf("\n\t\t[1] Phone number\n");
@@ -498,3 +498,104 @@ void makeTransaction(struct User u)
     getchar();
 }
 
+void removeAccount(struct User u)
+{
+    FILE *fp, *tempFp;
+    struct Record r;
+    int accountId, found = 0, confirm;
+    
+    system("clear");
+    printf("\n\n\t\t======= Remove Account =======\n\n");
+    
+    printf("\n\t\tEnter account ID to remove: ");
+    scanf("%d", &accountId);
+    
+    fp = fopen(RECORDS, "r");
+    if (fp == NULL)
+    {
+        printf("Error opening records file!\n");
+        return;
+    }
+    
+    // First, check if account exists and show details
+    while (fscanf(fp, "%d %d %s %d %d/%d/%d %s %d %lf %s",
+                  &r.id, &r.userId, r.name, &r.accountNbr,
+                  &r.deposit.month, &r.deposit.day, &r.deposit.year,
+                  r.country, &r.phone, &r.amount, r.accountType) != EOF)
+    {
+        if (r.id == accountId && r.userId == u.id)
+        {
+            found = 1;
+            printf("\n\t\tAccount found:");
+            printf("\n\t\tAccount ID: %d", r.id);
+            printf("\n\t\tAccount Number: %d", r.accountNbr);
+            printf("\n\t\tAccount Type: %s", r.accountType);
+            printf("\n\t\tAmount: $%.2f", r.amount);
+            break;
+        }
+    }
+    fclose(fp);
+    
+    if (!found)
+    {
+        printf("\n\t\tAccount not found or doesn't belong to you!\n");
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    printf("\n\t\tAre you sure you want to remove this account?");
+    printf("\n\t\t[1] Yes\n");
+    printf("\n\t\t[0] No\n");
+    printf("\n\t\tChoice: ");
+    scanf("%d", &confirm);
+    
+    if (confirm != 1)
+    {
+        printf("\n\t\tAccount removal cancelled.\n");
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    // Remove the account from file
+    fp = fopen(RECORDS, "r");
+    tempFp = fopen("./data/temp.txt", "w");
+    
+    if (fp == NULL || tempFp == NULL)
+    {
+        printf("Error opening files!\n");
+        return;
+    }
+    
+    struct Record tempR;
+    
+    while (fscanf(fp, "%d %d %s %d %d/%d/%d %s %d %lf %s",
+                  &tempR.id, &tempR.userId, tempR.name, &tempR.accountNbr,
+                  &tempR.deposit.month, &tempR.deposit.day, &tempR.deposit.year,
+                  tempR.country, &tempR.phone, &tempR.amount, tempR.accountType) != EOF)
+    {
+        // Write all records except the one to be removed
+        if (!(tempR.id == accountId && tempR.userId == u.id))
+        {
+            fprintf(tempFp, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n",
+                    tempR.id, tempR.userId, tempR.name, tempR.accountNbr,
+                    tempR.deposit.month, tempR.deposit.day, tempR.deposit.year,
+                    tempR.country, tempR.phone, tempR.amount, tempR.accountType);
+        }
+    }
+    
+    fclose(fp);
+    fclose(tempFp);
+    
+    // Replace original file with updated file
+    remove(RECORDS);
+    rename("./data/temp.txt", RECORDS);
+    
+    printf("\n\t\tAccount removed successfully!\n");
+    printf("\n\t\tPress Enter to continue...");
+    getchar();
+    getchar();
+}
