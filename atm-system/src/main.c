@@ -37,8 +37,7 @@ void mainMenu(struct User u)
         removeAccount(u);
         break;
     case 7:
-        // student TODO : add your **Transfer owner** function
-        // here
+       transferOwnership(u);
         break;
     case 8:
         exit(1);
@@ -53,7 +52,7 @@ void initMenu(struct User *u)
     int r = 0;
     int option;
     system("clear");
-    printf("\n\n\t\t======= ATM =======\n");
+    printf("\n\n\t\t======= ATM MANAGEMENT SYSTEM =======\n");
     printf("\n\t\t-->> Feel free to login / register :\n");
     printf("\n\t\t[1]- login\n");
     printf("\n\t\t[2]- register\n");
