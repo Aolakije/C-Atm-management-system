@@ -593,8 +593,154 @@ void removeAccount(struct User u)
     // Replace original file with updated file
     remove(RECORDS);
     rename("./data/temp.txt", RECORDS);
-    
     printf("\n\t\tAccount removed successfully!\n");
+    printf("\n\t\tPress Enter to continue...");
+    getchar();
+    getchar();
+}
+void transferOwnership(struct User u)
+{
+    FILE *fp, *tempFp, *userFp;
+    struct Record r;
+    struct User newOwner;
+    int accountId, newOwnerId, found = 0, ownerExists = 0;
+    
+    system("clear");
+    printf("\n\n\t\t======= Transfer Account Ownership =======\n\n");
+    
+    printf("\n\t\tEnter account ID to transfer: ");
+    scanf("%d", &accountId);
+    
+    fp = fopen(RECORDS, "r");
+    if (fp == NULL)
+    {
+        printf("Error opening records file!\n");
+        return;
+    }
+    
+    // Check if account exists and belongs to current user
+    while (fscanf(fp, "%d %d %s %d %d/%d/%d %s %d %lf %s",
+                  &r.id, &r.userId, r.name, &r.accountNbr,
+                  &r.deposit.month, &r.deposit.day, &r.deposit.year,
+                  r.country, &r.phone, &r.amount, r.accountType) != EOF)
+    {
+        if (r.id == accountId && r.userId == u.id)
+        {
+            found = 1;
+            printf("\n\t\tAccount found:");
+            printf("\n\t\tAccount ID: %d", r.id);
+            printf("\n\t\tAccount Number: %d", r.accountNbr);
+            printf("\n\t\tAccount Type: %s", r.accountType);
+            printf("\n\t\tAmount: $%.2f", r.amount);
+            break;
+        }
+    }
+    fclose(fp);
+    
+    if (!found)
+    {
+        printf("\n\t\tAccount not found or doesn't belong to you!\n");
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    printf("\n\t\tEnter new owner's user ID: ");
+    scanf("%d", &newOwnerId);
+    
+    // Check if new owner exists
+    userFp = fopen("./data/users.txt", "r");
+    if (userFp == NULL)
+    {
+        printf("Error opening users file!\n");
+        return;
+    }
+    
+    while (fscanf(userFp, "%d %s %s", &newOwner.id, newOwner.name, newOwner.password) != EOF)
+    {
+        if (newOwner.id == newOwnerId)
+        {
+            ownerExists = 1;
+            break;
+        }
+    }
+    fclose(userFp);
+    
+    if (!ownerExists)
+    {
+        printf("\n\t\tError: New owner with ID %d not found!\n", newOwnerId);
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    if (newOwnerId == u.id)
+    {
+        printf("\n\t\tError: Cannot transfer account to yourself!\n");
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    printf("\n\t\tTransferring account to user: %s (ID: %d)", newOwner.name, newOwnerId);
+    printf("\n\t\tConfirm transfer?");
+    printf("\n\t\t[1] Yes\n");
+    printf("\n\t\t[0] No\n");
+    printf("\n\t\tChoice: ");
+    
+    int confirm;
+    scanf("%d", &confirm);
+    
+    if (confirm != 1)
+    {
+        printf("\n\t\tTransfer cancelled.\n");
+        printf("\n\t\tPress Enter to continue...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    // Update the account ownership
+    fp = fopen(RECORDS, "r");
+    tempFp = fopen("./data/temp.txt", "w");
+    
+    if (fp == NULL || tempFp == NULL)
+    {
+        printf("Error opening files!\n");
+        return;
+    }
+    
+    struct Record tempR;
+    
+    while (fscanf(fp, "%d %d %s %d %d/%d/%d %s %d %lf %s",
+                  &tempR.id, &tempR.userId, tempR.name, &tempR.accountNbr,
+                  &tempR.deposit.month, &tempR.deposit.day, &tempR.deposit.year,
+                  tempR.country, &tempR.phone, &tempR.amount, tempR.accountType) != EOF)
+    {
+        if (tempR.id == accountId && tempR.userId == u.id)
+        {
+            // Transfer ownership - update userId and name
+            tempR.userId = newOwnerId;
+            strcpy(tempR.name, newOwner.name);
+        }
+        
+        fprintf(tempFp, "%d %d %s %d %d/%d/%d %s %d %.2lf %s\n",
+                tempR.id, tempR.userId, tempR.name, tempR.accountNbr,
+                tempR.deposit.month, tempR.deposit.day, tempR.deposit.year,
+                tempR.country, tempR.phone, tempR.amount, tempR.accountType);
+    }
+    
+    fclose(fp);
+    fclose(tempFp);
+    
+    // Replace original file with updated file
+    remove(RECORDS);
+    rename("./data/temp.txt", RECORDS);
+    
+    printf("\n\t\tAccount ownership transferred successfully!\n");
     printf("\n\t\tPress Enter to continue...");
     getchar();
     getchar();
