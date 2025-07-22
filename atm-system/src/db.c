@@ -4,9 +4,6 @@
 #include <sqlite3.h>
 #include <string.h>
 
-
-sqlite3 *db = NULL;
-
 int openDB() {
     int rc = sqlite3_open("atm.db", &db);
     if (rc) {
@@ -73,4 +70,25 @@ int loginUser(const char *name, const char *password) {
 
     sqlite3_finalize(stmt);
     return result;
+}
+// Add this to db.c
+
+int getUserIdByName(const char *username) {
+    sqlite3_stmt *stmt;
+    const char *sql = "SELECT user_id FROM users WHERE name = ?";
+    int user_id = -1;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Prepare error: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    sqlite3_bind_text(stmt, 1, username, -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        user_id = sqlite3_column_int(stmt, 0);
+    }
+
+    sqlite3_finalize(stmt);
+    return user_id;
 }
