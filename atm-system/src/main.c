@@ -1,4 +1,10 @@
 #include "header.h"
+#include <sqlite3.h>
+#include "db.h"
+
+
+// Initialize DB once (call this at program start)
+sqlite3 *db;
 
 void mainMenu(struct User u)
 {
@@ -88,11 +94,18 @@ void initMenu(struct User *u)
     }
 };
 
-int main()
-{
-    struct User u;
-    
+
+int main() {
+    if (openDB() != 0) return 1;
+      if (initDBSchema("data.sql") != 0) {
+        closeDB();
+        return 1;
+    }
+struct User u;
+
     initMenu(&u);
     mainMenu(u);
+
+    closeDB();
     return 0;
 }
