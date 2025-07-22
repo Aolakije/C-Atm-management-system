@@ -3,8 +3,6 @@
 #include <string.h>
 #include "header.h"
 
-// Assume your struct definitions here or included from header.h
-
 int getAccountFromDB(sqlite3 *db, int accountId, char name[50], struct Record *r)
 {
     const char *sql = "SELECT accounts.id, accounts.user_id, users.name, accounts.account_id, "
@@ -121,7 +119,6 @@ void createNewAcc(sqlite3 *db, struct User u) {
     struct Record r;
     memset(&r, 0, sizeof(r));
 
-    // Prompt user for account info (you can adapt these input steps)
     printf("Enter account number: ");
     scanf("%d", &r.accountNbr);
 
@@ -140,7 +137,6 @@ void createNewAcc(sqlite3 *db, struct User u) {
     printf("Enter account type: ");
     scanf("%s", r.accountType);
 
-    // Insert into DB
     const char *sql = "INSERT INTO accounts "
                       "(user_id, account_id, creation_date, country, phone_number, balance, account_type) "
                       "VALUES (?, ?, ?, ?, ?, ?, ?);";
