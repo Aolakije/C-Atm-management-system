@@ -328,7 +328,7 @@ void removeAccount(sqlite3 *db, struct User u) {
 }
 void transferOwnership(sqlite3 *db, struct User u) {
     int accountId, newUserId;
-    printf("Enter account ID to transfer: ");
+    printf("Enter your ACCOUNT ID: ");
     scanf("%d", &accountId);
 
     struct Record r;
@@ -343,7 +343,7 @@ void transferOwnership(sqlite3 *db, struct User u) {
         return;
     }
 
-    printf("Enter new user ID to transfer ownership to: ");
+    printf("Enter NEW USER_ID to transfer ownership to: ");
     scanf("%d", &newUserId);
 
     // Check if new user exists
