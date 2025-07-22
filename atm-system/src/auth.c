@@ -84,8 +84,7 @@ void registerMenu(char a[50], char pass[50]) {
     if (userExists) {
         printf("\n\n\t\t\t\tUser already exists! Please choose a different username.\n");
         printf("\n\n\t\t\t\tPress Enter to continue...");
-        getchar();
-        getchar();
+        getchar(); getchar();
         return;
     }
 
@@ -109,8 +108,8 @@ void registerMenu(char a[50], char pass[50]) {
     }
 
     // Insert new user
-    const char *insertSql = "INSERT INTO users (name, password) VALUES (?, ?)";
-    if (sqlite3_prepare_v2(db, insertSql, -1, &stmt, NULL) != SQLITE_OK) {
+    const char *insertUserSql = "INSERT INTO users (name, password) VALUES (?, ?)";
+    if (sqlite3_prepare_v2(db, insertUserSql, -1, &stmt, NULL) != SQLITE_OK) {
         fprintf(stderr, "SQL prepare error: %s\n", sqlite3_errmsg(db));
         return;
     }
@@ -119,13 +118,58 @@ void registerMenu(char a[50], char pass[50]) {
     sqlite3_bind_text(stmt, 2, pass, -1, SQLITE_STATIC);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
-        fprintf(stderr, "SQL insert error: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "SQL insert error (user): %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return;
+    }
+
+    // Get the new user's ID for foreign key
+    sqlite3_int64 user_id = sqlite3_last_insert_rowid(db);
+    sqlite3_finalize(stmt);
+
+    // Prompt for account details
+    char accountName[50], date[20], country[50], phone[20], accountType[20];
+    double balance;
+    int accountId;
+
+    printf("\n\n\t\t\t\tEnter account name: ");
+    scanf("%s", accountName);
+    printf("\n\t\t\t\tEnter account ID (number): ");
+    scanf("%d", &accountId);
+    printf("\n\t\t\t\tEnter date (YYYY-MM-DD): ");
+    scanf("%s", date);
+    printf("\n\t\t\t\tEnter country: ");
+    scanf("%s", country);
+    printf("\n\t\t\t\tEnter phone: ");
+    scanf("%s", phone);
+    printf("\n\t\t\t\tEnter account type: ");
+    scanf("%s", accountType);
+    printf("\n\t\t\t\tEnter initial balance: ");
+    scanf("%lf", &balance);
+
+    // Insert account data
+    const char *insertAccountSql = "INSERT INTO accounts (user_id, name, account_id, date, country, phone, balance, account_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    if (sqlite3_prepare_v2(db, insertAccountSql, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "SQL prepare error (account): %s\n", sqlite3_errmsg(db));
+        return;
+    }
+
+    sqlite3_bind_int64(stmt, 1, user_id);
+    sqlite3_bind_text(stmt, 2, accountName, -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 3, accountId);
+    sqlite3_bind_text(stmt, 4, date, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 5, country, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 6, phone, -1, SQLITE_STATIC);
+    sqlite3_bind_double(stmt, 7, balance);
+    sqlite3_bind_text(stmt, 8, accountType, -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        fprintf(stderr, "SQL insert error (account): %s\n", sqlite3_errmsg(db));
     } else {
         printf("\n\n\t\t\t\tRegistration successful! You can now login.\n");
     }
 
     sqlite3_finalize(stmt);
     printf("\n\n\t\t\t\tPress Enter to continue...");
-    getchar();
-    getchar();
+    getchar(); getchar();
 }
