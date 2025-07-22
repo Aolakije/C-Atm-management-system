@@ -10,3 +10,5 @@ void closeDB();
 
 #endif // DB_H
 int initDBSchema(const char *sqlFilePath);
+int getUserIdByName(const char *username);
+void listUserAccounts(int user_id);
