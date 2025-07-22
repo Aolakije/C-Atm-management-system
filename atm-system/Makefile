@@ -1,16 +1,23 @@
-objects = src/main.o src/system.o src/auth.o
+# List of object files (added db.o)
+objects = src/main.o src/system.o src/auth.o src/db.o
 
-atm : $(objects)
-	cc -o atm $(objects)
+# Final executable
+atm: $(objects)
+	cc -o atm $(objects) -lncurses -lsqlite3
 
-main.o : src/header.h
-kbd.o : src/header.h
-command.o : src/header.h
-display.o : src/header.h
-insert.o : src/header.h
-search.o : src/header.h
-files.o : src/header.h
-utils.o : src/header.h
+# Rules to build object files
+src/main.o: src/main.c src/header.h src/db.h
+	cc -c src/main.c -o src/main.o
 
-clean :
-	rm -f $(objects)
+src/system.o: src/system.c src/header.h
+	cc -c src/system.c -o src/system.o
+
+src/auth.o: src/auth.c src/header.h
+	cc -c src/auth.c -o src/auth.o
+
+src/db.o: src/db.c src/db.h
+	cc -c src/db.c -o src/db.o
+
+# Clean up
+clean:
+	rm -f $(objects) atm
