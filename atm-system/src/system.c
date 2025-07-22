@@ -347,7 +347,7 @@ void transferOwnership(sqlite3 *db, struct User u) {
     scanf("%d", &newUserId);
 
     // Check if new user exists
-    const char *sqlCheckUser = "SELECT id FROM users WHERE id = ?;";
+    const char *sqlCheckUser = "SELECT user_id FROM users WHERE user_id = ?;";
     sqlite3_stmt *stmtCheck;
     if (sqlite3_prepare_v2(db, sqlCheckUser, -1, &stmtCheck, NULL) != SQLITE_OK) {
         printf("Failed to prepare user check: %s\n", sqlite3_errmsg(db));
