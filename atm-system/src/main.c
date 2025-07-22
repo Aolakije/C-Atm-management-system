@@ -1,10 +1,12 @@
 #include "header.h"
 #include <sqlite3.h>
 #include "db.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-
-// Initialize DB once (call this at program start)
-sqlite3 *db;
+// Global DB pointer
+sqlite3 *db = NULL;
 
 void mainMenu(struct User u)
 {
@@ -15,7 +17,7 @@ void mainMenu(struct User u)
     printf("\n\t\t[1]- Create a new account\n");
     printf("\n\t\t[2]- Update account information\n");
     printf("\n\t\t[3]- Check accounts\n");
-    printf("\n\t\t[4]- Check list of owned account\n");
+    printf("\n\t\t[4]- Check list of owned accounts\n");
     printf("\n\t\t[5]- Make Transaction\n");
     printf("\n\t\t[6]- Remove existing account\n");
     printf("\n\t\t[7]- Transfer ownership\n");
@@ -25,33 +27,34 @@ void mainMenu(struct User u)
     switch (option)
     {
     case 1:
-        createNewAcc(u);
+        createNewAcc(db, u);
         break;
     case 2:
-       updateAccountInfo(u);
+        updateAccountInfo(db, u);
         break;
     case 3:
-        checkAccountDetails(u);
+        checkAccountDetails(db, u);
         break;
     case 4:
-        checkAllAccounts(u);
+        checkAllAccounts(db, u);
         break;
     case 5:
-        makeTransaction(u);
+        makeTransaction(db, u);
         break;
     case 6:
-        removeAccount(u);
+        removeAccount(db, u);
         break;
     case 7:
-       transferOwnership(u);
+        transferOwnership(db, u);
         break;
     case 8:
-        exit(1);
+        exit(0);
         break;
     default:
         printf("Invalid operation!\n");
+        break;
     }
-};
+}
 
 void initMenu(struct User *u)
 {
@@ -72,37 +75,61 @@ void initMenu(struct User *u)
             loginMenu(u->name, u->password);
             if (strcmp(u->password, getPassword(*u)) == 0)
             {
-                printf("\n\nPassword Match!");
+                printf("\n\nPassword Match!\n");
+                u->id = getUserIdByName(u->name);  // 🔐 Retrieve user_id
+                printf("Debug: Logged-in user ID = %d\n", u->id);
+                if (u->id == -1) {
+                    printf("\nFailed to retrieve user ID.\n");
+                    exit(1);
+                }
+                r = 1;
             }
             else
             {
-                printf("\nWrong password!! or User Name\n");
+                printf("\nWrong password or User Name\n");
+                exit(1);
+            }
+            break;
+
+        case 2:
+            registerMenu(u->name, u->password);
+            u->id = getUserIdByName(u->name);  // 🔐 Retrieve user_id after registration
+            if (u->id == -1) {
+                printf("\nFailed to retrieve user ID.\n");
                 exit(1);
             }
             r = 1;
             break;
-        case 2:
-            registerMenu(u->name, u->password);
-            r = 1;
-            break;
+
         case 3:
-            exit(1);
+            exit(0);
             break;
+
         default:
             printf("Insert a valid operation!\n");
+            break;
         }
     }
-};
+}
 
+int main()
+{
+    // Open SQLite DB connection
+    if (openDB() != 0) 
+    {
+        fprintf(stderr, "Failed to open database\n");
+        return 1;
+    }
 
-int main() {
-    if (openDB() != 0) return 1;
-      if (initDBSchema("data.sql") != 0) {
+    // Initialize DB schema
+    if (initDBSchema("data.sql") != 0)
+    {
+        fprintf(stderr, "Failed to initialize database schema\n");
         closeDB();
         return 1;
     }
-struct User u;
 
+    struct User u;
     initMenu(&u);
     mainMenu(u);
 
