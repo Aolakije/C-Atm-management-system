@@ -1,20 +1,20 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef HEADER_H
+#define HEADER_H
+#include <sqlite3.h>
+
 
 struct Date
 {
     int month, day, year;
 };
 
-// all fields for each record of an account
 struct Record
 {
     int id;
     int userId;
     char name[100];
     char country[100];
-    int phone;
+    char phone[20];        // changed from int to string
     char accountType[10];
     int accountNbr;
     double amount;
@@ -34,13 +34,14 @@ void loginMenu(char a[50], char pass[50]);
 void registerMenu(char a[50], char pass[50]);
 const char *getPassword(struct User u);
 
-// system function
-void createNewAcc(struct User u);
-void mainMenu(struct User u);
-void checkAllAccounts(struct User u);
-void updateAccountInfo(struct User u);
-void checkAccountDetails(struct User u);
-void makeTransaction(struct User u);
-void removeAccount(struct User u);
- void transferOwnership(struct User u);
+// system functions
+void createNewAcc(sqlite3 *db, struct User u);
+void checkAllAccounts(sqlite3 *db, struct User u);
+void updateAccountInfo(sqlite3 *db, struct User u);
+void checkAccountDetails(sqlite3 *db, struct User u);
+void makeTransaction(sqlite3 *db, struct User u);
+void removeAccount(sqlite3 *db, struct User u);
+void transferOwnership(sqlite3 *db, struct User u);
 
+
+#endif // HEADER_H
