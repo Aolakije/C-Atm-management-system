@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>   // <-- this one is essential for malloc/free
 #include <sqlite3.h>
+#include <string.h>
+
 
 sqlite3 *db = NULL;
 
@@ -48,4 +50,27 @@ int initDBSchema(const char *sqlFilePath) {
 
     free(sql);
     return 0;
+}
+
+int loginUser(const char *name, const char *password) {
+    const char *sql = "SELECT password FROM users WHERE name = ?";
+    sqlite3_stmt *stmt;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
+        fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
+        return 0;
+    }
+
+    sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
+
+    int result = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const unsigned char *db_pass = sqlite3_column_text(stmt, 0);
+        if (strcmp((const char *)db_pass, password) == 0) {
+            result = 1;  // password matches
+        }
+    }
+
+    sqlite3_finalize(stmt);
+    return result;
 }
