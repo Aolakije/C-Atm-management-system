@@ -329,7 +329,8 @@ void removeAccount(sqlite3 *db, struct User u) {
     sqlite3_finalize(stmt);
 }
 void transferOwnership(sqlite3 *db, struct User u) {
-    int accountId, newUserId;
+    int accountId;
+    char newUsername[100];
     printf("Enter your ACCOUNT ID: ");
     scanf("%d", &accountId);
 
@@ -345,31 +346,30 @@ void transferOwnership(sqlite3 *db, struct User u) {
         return;
     }
 
-    printf("Enter NEW USER_ID to transfer ownership to: ");
-    scanf("%d", &newUserId);
+    printf("Enter NEW USERNAME to transfer ownership to: ");
+    scanf("%s", newUsername);
 
-    // Step 1: Get the new owner's username
-    const char *sqlGetName = "SELECT name FROM users WHERE user_id = ?;";
-    sqlite3_stmt *stmtName;
-    if (sqlite3_prepare_v2(db, sqlGetName, -1, &stmtName, NULL) != SQLITE_OK) {
-        printf("Failed to prepare name query: %s\n", sqlite3_errmsg(db));
+    // Step 1: Look up new user's user_id by username
+    const char *sqlGetUserId = "SELECT user_id FROM users WHERE name = ?;";
+    sqlite3_stmt *stmtUser;
+    if (sqlite3_prepare_v2(db, sqlGetUserId, -1, &stmtUser, NULL) != SQLITE_OK) {
+        printf("Failed to prepare user lookup: %s\n", sqlite3_errmsg(db));
         return;
     }
 
-    sqlite3_bind_int(stmtName, 1, newUserId);
+    sqlite3_bind_text(stmtUser, 1, newUsername, -1, SQLITE_STATIC);
 
-    char newUsername[100];  // Buffer for new username
-    if (sqlite3_step(stmtName) == SQLITE_ROW) {
-        const unsigned char *nameText = sqlite3_column_text(stmtName, 0);
-        snprintf(newUsername, sizeof(newUsername), "%s", nameText);
+    int newUserId = -1;
+    if (sqlite3_step(stmtUser) == SQLITE_ROW) {
+        newUserId = sqlite3_column_int(stmtUser, 0);
     } else {
-        printf("New user ID not found.\n");
-        sqlite3_finalize(stmtName);
+        printf("Username '%s' not found.\n", newUsername);
+        sqlite3_finalize(stmtUser);
         return;
     }
-    sqlite3_finalize(stmtName);
+    sqlite3_finalize(stmtUser);
 
-    // Step 2: Update both user_id and username in accounts
+    // Step 2: Update account with new owner
     const char *sqlUpdate = "UPDATE accounts SET user_id = ?, username = ? WHERE account_id = ?;";
     sqlite3_stmt *stmtUpdate;
     if (sqlite3_prepare_v2(db, sqlUpdate, -1, &stmtUpdate, NULL) != SQLITE_OK) {
@@ -384,7 +384,7 @@ void transferOwnership(sqlite3 *db, struct User u) {
     if (sqlite3_step(stmtUpdate) != SQLITE_DONE) {
         printf("Failed to transfer ownership: %s\n", sqlite3_errmsg(db));
     } else {
-        printf("Ownership transferred successfully to %s (user_id %d).\n", newUsername, newUserId);
+        printf("Ownership of account %d transferred successfully to '%s'.\n", accountId, newUsername);
     }
 
     sqlite3_finalize(stmtUpdate);
