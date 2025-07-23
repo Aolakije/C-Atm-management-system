@@ -114,8 +114,6 @@ int saveAccountToDB(sqlite3 *db, struct User u, struct Record r)
     return 1;
 }
 
-#include <sqlite3.h>
-
 void createNewAcc(sqlite3 *db, struct User u) {
     struct Record r;
     memset(&r, 0, sizeof(r));
@@ -123,7 +121,7 @@ void createNewAcc(sqlite3 *db, struct User u) {
     printf("Enter account number: ");
     scanf("%d", &r.accountNbr);
 
-    printf("Enter creation date (MM DD YYYY): ");
+    printf("Enter creation date (MM-DD-YYYY): ");
     scanf("%d %d %d", &r.deposit.month, &r.deposit.day, &r.deposit.year);
 
     printf("Enter country: ");
