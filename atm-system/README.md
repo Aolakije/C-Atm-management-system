@@ -64,7 +64,7 @@ This project demonstrates programming logic and adaptation to C programming lang
 ```bash
 # Initialize the database with the provided schema
 # Run the SQL script to create tables
-sqlite3 atm_database.db < data.sql
+sqlite3 atm.db < data.sql
 
 # Or if using MySQL/PostgreSQL, run:
 # mysql -u username -p database_name < data.sql
