@@ -3,7 +3,7 @@ objects = src/main.o src/system.o src/auth.o src/db.o
 
 # Final executable
 atm: $(objects)
-	cc -o atm $(objects) -lncurses -lsqlite3
+	cc -o atm $(objects) -lsqlite3
 
 # Rules to build object files
 src/main.o: src/main.c src/header.h src/db.h
