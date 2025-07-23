@@ -64,9 +64,11 @@ void registerMenu(char a[50], char pass[50]) {
 
     system("clear");
     printf("\n\n\n\t\t\t\t   Bank Management System\n\t\t\t\t\t User Registration:");
-    
+
     printf("\n\n\t\t\t\tEnter username: ");
     scanf("%s", a);
+    // Flush stdin after scanf to avoid leftover input issues
+    int c; while ((c = getchar()) != '\n' && c != EOF);
 
     // Check if user already exists
     const char *checkSql = "SELECT COUNT(*) FROM users WHERE name = ?";
@@ -84,7 +86,7 @@ void registerMenu(char a[50], char pass[50]) {
     if (userExists) {
         printf("\n\n\t\t\t\tUser already exists! Please choose a different username.\n");
         printf("\n\n\t\t\t\tPress Enter to continue...");
-        getchar(); getchar();
+        getchar();
         return;
     }
 
@@ -100,6 +102,8 @@ void registerMenu(char a[50], char pass[50]) {
 
     printf("\n\n\t\t\t\tEnter password: ");
     scanf("%s", pass);
+    // Flush stdin after scanf
+    while ((c = getchar()) != '\n' && c != EOF);
 
     // Restore terminal
     if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0) {
@@ -113,7 +117,6 @@ void registerMenu(char a[50], char pass[50]) {
         fprintf(stderr, "SQL prepare error: %s\n", sqlite3_errmsg(db));
         return;
     }
-
     sqlite3_bind_text(stmt, 1, a, -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 2, pass, -1, SQLITE_STATIC);
 
@@ -134,21 +137,30 @@ void registerMenu(char a[50], char pass[50]) {
 
     printf("\n\n\t\t\t\tEnter account name: ");
     scanf("%s", accountName);
+    while ((c = getchar()) != '\n' && c != EOF);
     printf("\n\t\t\t\tEnter account ID (number): ");
     scanf("%d", &accountId);
-    printf("\n\t\t\t\tEnter date (YYYY-MM-DD): ");
+    while ((c = getchar()) != '\n' && c != EOF);
+    printf("\n\t\t\t\tEnter date (MM-DD-YYYY): ");
     scanf("%s", date);
+    while ((c = getchar()) != '\n' && c != EOF);
     printf("\n\t\t\t\tEnter country: ");
     scanf("%s", country);
+    while ((c = getchar()) != '\n' && c != EOF);
     printf("\n\t\t\t\tEnter phone: ");
     scanf("%s", phone);
+    while ((c = getchar()) != '\n' && c != EOF);
     printf("\n\t\t\t\tEnter account type: ");
     scanf("%s", accountType);
+    while ((c = getchar()) != '\n' && c != EOF);
     printf("\n\t\t\t\tEnter initial balance: ");
     scanf("%lf", &balance);
+    while ((c = getchar()) != '\n' && c != EOF);
 
-    // Insert account data
-    const char *insertAccountSql = "INSERT INTO accounts (user_id, name, account_id, date, country, phone, balance, account_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    // Insert account data with corrected column names
+    const char *insertAccountSql = 
+        "INSERT INTO accounts (user_id, username, account_id, creation_date, country, phone_number, balance, account_type) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     if (sqlite3_prepare_v2(db, insertAccountSql, -1, &stmt, NULL) != SQLITE_OK) {
         fprintf(stderr, "SQL prepare error (account): %s\n", sqlite3_errmsg(db));
         return;
@@ -165,11 +177,13 @@ void registerMenu(char a[50], char pass[50]) {
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
         fprintf(stderr, "SQL insert error (account): %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return;
     } else {
         printf("\n\n\t\t\t\tRegistration successful! You can now login.\n");
     }
 
     sqlite3_finalize(stmt);
     printf("\n\n\t\t\t\tPress Enter to continue...");
-    getchar(); getchar();
+    getchar();
 }
