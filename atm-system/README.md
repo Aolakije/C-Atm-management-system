@@ -62,13 +62,17 @@ This project demonstrates programming logic and adaptation to C programming lang
 ``
 ### Database Setup
 ```bash
+# Install Sqlite on your terminal
+For mac : brew install sqlite
+for windows/linux: sudo apt update
+                   sudo apt install sqlite3 libsqlite3-dev
 # Initialize the database with the provided schema
 # Run the SQL script to create tables
 sqlite3 atm.db < data.sql
 
 # Or if using MySQL/PostgreSQL, run:
-# mysql -u username -p database_name < data.sql
-# psql -d database_name -f data.sql
+    mysql -u username -p database_name < data.sql
+    psql -d database_name -f data.sql
 ```
 
 ### Building the Project
