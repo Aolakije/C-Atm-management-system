@@ -482,7 +482,7 @@ void transferOwnership(sqlite3 *db, struct User u) {
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", t);
 
     // Write log line: timestamp, account id, old owner, new owner
-    fprintf(logFile, "[%s] Transfer ownership of account %d from user '%s' (ID %d) to user '%s' (ID %d)\n",
+    fprintf(logFile, "[%s] Transfer ownership of account %d from user '%s' (ID %d) to user '%s' (ID %d) is Succesfull\n",
             timeStr, accountId, currentUsername, u.id, newUsername, newUserId);
 
     fclose(logFile);
