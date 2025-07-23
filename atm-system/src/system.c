@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "header.h"
+#include <time.h>
 
 int getAccountFromDB(sqlite3 *db, int accountId, char name[50], struct Record *r)
 {
@@ -243,6 +244,11 @@ void checkAccountDetails(sqlite3 *db, struct User u) {
         return;
     }
 
+    if (r.userId != u.id) {
+        printf("You do not have access to this account.\n");
+        return;
+    }
+
     printf("Account Details:\n");
     printf("User: %s\n", userName);
     printf("Account Number: %d\n", r.accountNbr);
@@ -251,7 +257,30 @@ void checkAccountDetails(sqlite3 *db, struct User u) {
     printf("Phone: %s\n", r.phone);
     printf("Balance: %.2lf\n", r.amount);
     printf("Account Type: %s\n", r.accountType);
+
+    // Interest Calculation
+    double interestRate = 0.0;
+
+    if (strcmp(r.accountType, "savings") == 0) {
+        interestRate = 0.07;
+    } else if (strcmp(r.accountType, "fixed01") == 0) {
+        interestRate = 0.04;
+    } else if (strcmp(r.accountType, "fixed02") == 0) {
+        interestRate = 0.05;
+    } else if (strcmp(r.accountType, "fixed03") == 0) {
+        interestRate = 0.08;
+    } else if (strcmp(r.accountType, "current") == 0) {
+        printf("You will not get interests because the account is of type current.\n");
+        return;
+    } else {
+        printf("Unknown account type. Cannot compute interest.\n");
+        return;
+    }
+
+    double interest = r.amount * interestRate;
+    printf("You will get $%.2lf as interest on day %d of every month.\n", interest, r.deposit.day);
 }
+
 void makeTransaction(sqlite3 *db, struct User u) {
     int accountId;
     printf("Enter account ID for transaction: ");
@@ -264,6 +293,20 @@ void makeTransaction(sqlite3 *db, struct User u) {
         return;
     }
 
+    // Check ownership
+    if (r.userId != u.id) {
+        printf("You do not own this account.\n");
+        return;
+    }
+
+    // Check for fixed accounts
+    if (strcmp(r.accountType, "fixed01") == 0 ||
+        strcmp(r.accountType, "fixed02") == 0 ||
+        strcmp(r.accountType, "fixed03") == 0) {
+        printf("Transactions are not allowed on this account type (%s).\n", r.accountType);
+        return;
+    }
+
     printf("Current balance: %.2lf\n", r.amount);
     printf("Enter 1 for deposit, 2 for withdrawal: ");
     int choice;
@@ -272,6 +315,11 @@ void makeTransaction(sqlite3 *db, struct User u) {
     double amount;
     printf("Enter amount: ");
     scanf("%lf", &amount);
+
+    if (amount <= 0) {
+        printf("Invalid amount.\n");
+        return;
+    }
 
     if (choice == 1) {
         r.amount += amount;
@@ -288,11 +336,22 @@ void makeTransaction(sqlite3 *db, struct User u) {
         return;
     }
 
+    // Save the updated balance
     if (saveAccountToDB(db, u, r))
         printf("Transaction successful. New balance: %.2lf\n", r.amount);
     else
         printf("Failed to update account.\n");
+
+    // Optionally: log to file
+    FILE *fp = fopen("transactions.txt", "a");
+    if (fp) {
+        fprintf(fp, "%s %s %.2lf on account %d. New balance: %.2lf\n",
+                u.name, (choice == 1 ? "deposited" : "withdrew"),
+                amount, r.accountNbr, r.amount);
+        fclose(fp);
+    }
 }
+
 void removeAccount(sqlite3 *db, struct User u) {
     int accountId;
     printf("Enter account ID to remove: ");
@@ -311,23 +370,42 @@ void removeAccount(sqlite3 *db, struct User u) {
         return;
     }
 
-    const char *sql = "DELETE FROM accounts WHERE id = ?;";
+    // Confirm deletion
+    char confirm;
+    printf("Are you sure you want to delete this account? (Y/N): ");
+    scanf(" %c", &confirm);
+    if (confirm != 'Y' && confirm != 'y') {
+        printf("Deletion cancelled.\n");
+        return;
+    }
+
+    // Delete account by account_id
+    const char *sql = "DELETE FROM accounts WHERE account_id = ?;";
     sqlite3_stmt *stmt;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
         printf("Failed to prepare delete statement: %s\n", sqlite3_errmsg(db));
         return;
     }
 
-    sqlite3_bind_int(stmt, 1, r.id);
+    sqlite3_bind_int(stmt, 1, r.accountNbr);  // Use accountNbr, not DB row id
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
         printf("Failed to delete account: %s\n", sqlite3_errmsg(db));
     } else {
         printf("Account deleted successfully.\n");
+
+        // Log the deletion
+        FILE *fp = fopen("transactions.txt", "a");
+        if (fp) {
+            fprintf(fp, "%s deleted account %d (%.2lf %s)\n",
+                    u.name, r.accountNbr, r.amount, r.accountType);
+            fclose(fp);
+        }
     }
 
     sqlite3_finalize(stmt);
 }
+
 void transferOwnership(sqlite3 *db, struct User u) {
     int accountId;
     char newUsername[100];
@@ -388,4 +466,24 @@ void transferOwnership(sqlite3 *db, struct User u) {
     }
 
     sqlite3_finalize(stmtUpdate);
+
+// --- Log the transfer in transactions.txt ---
+
+    FILE *logFile = fopen("transactions.txt", "a");
+    if (logFile == NULL) {
+        printf("Warning: Could not open transactions.txt for logging.\n");
+        return;
+    }
+
+    // Get current timestamp
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    char timeStr[64];
+    strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", t);
+
+    // Write log line: timestamp, account id, old owner, new owner
+    fprintf(logFile, "[%s] Transfer ownership of account %d from user '%s' (ID %d) to user '%s' (ID %d)\n",
+            timeStr, accountId, currentUsername, u.id, newUsername, newUserId);
+
+    fclose(logFile);
 }
