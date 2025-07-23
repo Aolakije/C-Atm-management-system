@@ -59,6 +59,17 @@ This project demonstrates programming logic and adaptation to C programming lang
 - GCC compiler
 - Make utility
 - SQL database system (SQLite/MySQL/PostgreSQL)
+``
+### Database Setup
+```bash
+# Initialize the database with the provided schema
+# Run the SQL script to create tables
+sqlite3 atm_database.db < data.sql
+
+# Or if using MySQL/PostgreSQL, run:
+# mysql -u username -p database_name < data.sql
+# psql -d database_name -f data.sql
+```
 
 ### Building the Project
 ```bash
@@ -72,16 +83,7 @@ make
 ./atm
 ```
 
-### Database Setup
-```bash
-# Initialize the database with the provided schema
-# Run the SQL script to create tables
-sqlite3 atm_database.db < data.sql
 
-# Or if using MySQL/PostgreSQL, run:
-# mysql -u username -p database_name < data.sql
-# psql -d database_name -f data.sql
-```
 
 The `data.sql` file contains the database schema with table definitions for:
 - Users table (user credentials and information)
