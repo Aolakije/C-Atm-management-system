@@ -69,7 +69,7 @@ for windows/linux: sudo apt update
 # Initialize the database with the provided schema
 # Run the SQL script to create tables
 sqlite3 atm.db < data.sql
-
+ 
 # Or if using MySQL/PostgreSQL, run:
     mysql -u username -p database_name < data.sql
     psql -d database_name -f data.sql
