@@ -92,14 +92,19 @@ void initMenu(struct User *u)
             break;
 
         case 2:
-            registerMenu(u->name, u->password);
-            u->id = getUserIdByName(u->name);  // 🔐 Retrieve user_id after registration
-            if (u->id == -1) {
-                printf("\nFailed to retrieve user ID.\n");
-                exit(1);
-            }
-            r = 1;
-            break;
+    if (registerMenu(u->name, u->password) == 0) {
+        u->id = getUserIdByName(u->name);
+        if (u->id == -1) {
+            printf("\nFailed to retrieve user ID.\n");
+            exit(1);
+        }
+        r = 1;  // registration succeeded, exit menu loop
+    } else {
+        // registration failed, don't proceed to login
+        // maybe prompt again or just continue loop
+        printf("\nPlease try registering again with a different username.\n");
+    }
+    break;
 
         case 3:
             exit(0);
