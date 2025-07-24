@@ -92,8 +92,8 @@ int saveAccountToDB(sqlite3 *db, struct User u, struct Record r)
     sqlite3_bind_int(stmt, 2, r.accountNbr);
 
     char creationDate[20];
-    snprintf(creationDate, sizeof(creationDate), "%04d-%02d-%02d",
-             r.deposit.year, r.deposit.month, r.deposit.day);
+    snprintf(creationDate, sizeof(creationDate), "%02d-%02d-%04d",
+             r.deposit.month, r.deposit.day, r.deposit.year);  // MM-DD-YYYY
     sqlite3_bind_text(stmt, 3, creationDate, -1, SQLITE_STATIC);
 
     sqlite3_bind_text(stmt, 4, r.country, -1, SQLITE_STATIC);
@@ -168,7 +168,7 @@ void createNewAcc(sqlite3 *db, struct User u) {
     int valid = 0;
     do {
         printf("\nAvailable account types:\n");
-        printf(" - savings\n - fixed01\n - fixed02\n - fixed03\n - current\n");
+        printf(" - savings\n\n - fixed01\n\n - fixed02\n\n - fixed03\n\n - current\n");
         printf("Enter account type: ");
         scanf("%19s", inputType);
         while ((c = getchar()) != '\n' && c != EOF);
@@ -187,7 +187,7 @@ void createNewAcc(sqlite3 *db, struct User u) {
         }
     } while (!valid);
 
-    // Format date as YYYY-MM-DD for DB
+    // Format date as MM-DD-YYYY for DB
     char creationDate[20];
     snprintf(creationDate, sizeof(creationDate), "%02d-%02d-%04d",
               r.deposit.month, r.deposit.day, r.deposit.year);
@@ -201,7 +201,6 @@ void createNewAcc(sqlite3 *db, struct User u) {
         printf("Failed to prepare insert statement: %s\n", sqlite3_errmsg(db));
         return;
     }
-
     sqlite3_bind_int(stmt, 1, u.id);
     sqlite3_bind_text(stmt, 2, u.name, -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 3, r.accountNbr);
@@ -220,7 +219,6 @@ void createNewAcc(sqlite3 *db, struct User u) {
 
     sqlite3_finalize(stmt);
 }
-
 void checkAllAccounts(sqlite3 *db, struct User u) {
     const char *sql =
         "SELECT accounts.account_id, accounts.creation_date, accounts.balance, accounts.account_type "
@@ -240,15 +238,26 @@ void checkAllAccounts(sqlite3 *db, struct User u) {
         const unsigned char *creationDate = sqlite3_column_text(stmt, 1);
         double balance = sqlite3_column_double(stmt, 2);
         const unsigned char *accountType = sqlite3_column_text(stmt, 3);
-
         printf("Account ID: %d\n", accountId);
-        printf("Creation Date: %s\n", creationDate ? (const char *)creationDate : "N/A");
+        if (creationDate) {
+            int month, day, year;
+            // Parse date as MM-DD-YYYY
+            if (sscanf((const char *)creationDate, "%d-%d-%d", &month, &day, &year) == 3) {
+                printf("Creation Date: %02d-%02d-%04d\n", month, day, year);
+            } else {
+                printf("Creation Date: Invalid format\n");
+            }
+        } else {
+            printf("Creation Date: N/A\n");
+        }
+
         printf("Balance: %.2lf\n", balance);
         printf("Type: %s\n\n", accountType ? (const char *)accountType : "N/A");
     }
 
     sqlite3_finalize(stmt);
 }
+
 void updateAccountInfo(sqlite3 *db, struct User u) {
     int accountId;
     printf("Enter account ID to update: ");
@@ -297,19 +306,22 @@ void checkAccountDetails(sqlite3 *db, struct User u) {
     printf("Balance: %.2lf\n", r.amount);
     printf("Account Type: %s\n", r.accountType);
 
-    // Interest Calculation
-    double interestRate = 0.0;
+    double interest = 0.0;
+    int interestYears = 1;  // default 1 year for fixed01
     int isSavings = 0;
 
     if (strcmp(r.accountType, "savings") == 0) {
-        interestRate = 0.07;
+        interest = r.amount * 0.07;  // 7% annual interest
         isSavings = 1;
     } else if (strcmp(r.accountType, "fixed01") == 0) {
-        interestRate = 0.04;
+        interest = r.amount * 0.04 * 1;  // 4% for 1 year
+        interestYears = 1;
     } else if (strcmp(r.accountType, "fixed02") == 0) {
-        interestRate = 0.05;
+        interest = r.amount * 0.05 * 2;  // 5% per year * 2 years = 10%
+        interestYears = 2;
     } else if (strcmp(r.accountType, "fixed03") == 0) {
-        interestRate = 0.08;
+        interest = r.amount * 0.08 * 3;  // 8% per year * 3 years = 24%
+        interestYears = 3;
     } else if (strcmp(r.accountType, "current") == 0) {
         printf("You will not get interests because the account is of type current.\n");
         return;
@@ -318,10 +330,8 @@ void checkAccountDetails(sqlite3 *db, struct User u) {
         return;
     }
 
-    double interest = r.amount * interestRate;
-
     if (isSavings) {
-        // Savings accounts show monthly interest
+        // For savings accounts, show monthly interest payment on deposit day
         double monthlyInterest = interest / 12;
         if (r.deposit.day >= 1 && r.deposit.day <= 31) {
             printf("You will get $%.2lf as interest on day %d of every month.\n",
@@ -330,10 +340,12 @@ void checkAccountDetails(sqlite3 *db, struct User u) {
             printf("Interest calculation date is invalid.\n");
         }
     } else {
+        // For fixed accounts, interest paid after interestYears years
         printf("You will get $%.2lf as interest on %02d/%02d/%04d.\n",
-               interest, r.deposit.month, r.deposit.day, r.deposit.year);
+               interest, r.deposit.month, r.deposit.day, r.deposit.year + interestYears);
     }
 }
+
 void makeTransaction(sqlite3 *db, struct User u) {
     int accountId;
     printf("Enter account ID for transaction: ");
@@ -361,7 +373,7 @@ void makeTransaction(sqlite3 *db, struct User u) {
     }
 
     printf("Current balance: %.2lf\n", r.amount);
-    printf("Enter 1 for deposit, 2 for withdrawal: ");
+    printf("ENTER 1 for deposit, ENTER 2 for withdrawal: ");
     int choice;
     scanf("%d", &choice);
 
