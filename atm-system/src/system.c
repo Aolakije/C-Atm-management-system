@@ -3,6 +3,7 @@
 #include <string.h>
 #include "header.h"
 #include <time.h>
+#include <ctype.h>
 
 int getAccountFromDB(sqlite3 *db, int accountId, char name[50], struct Record *r)
 {
@@ -113,32 +114,87 @@ int saveAccountToDB(sqlite3 *db, struct User u, struct Record r)
     sqlite3_finalize(stmt);
     return 1;
 }
+// Helper to convert input to lowercase (optional, for case-insensitivity)
+static void toLower(char *str) {
+    for (; *str; ++str) *str = tolower(*str);
+}
 
 void createNewAcc(sqlite3 *db, struct User u) {
     struct Record r;
     memset(&r, 0, sizeof(r));
 
+    int c; // for flushing input buffer
+
     printf("Enter account number: ");
     scanf("%d", &r.accountNbr);
+    while ((c = getchar()) != '\n' && c != EOF); // flush stdin
 
+    // Read date as MM-DD-YYYY
     printf("Enter creation date (MM-DD-YYYY): ");
-    scanf("%d %d %d", &r.deposit.month, &r.deposit.day, &r.deposit.year);
+    if (scanf("%d-%d-%d", &r.deposit.month, &r.deposit.day, &r.deposit.year) != 3) {
+        printf("Invalid date format! Use MM-DD-YYYY\n");
+        while ((c = getchar()) != '\n' && c != EOF);
+        return;
+    }
+    while ((c = getchar()) != '\n' && c != EOF);
+
+    // Validate date
+    if (r.deposit.month < 1 || r.deposit.month > 12 ||
+        r.deposit.day < 1 || r.deposit.day > 31 ||
+        r.deposit.year < 1900) {
+        printf("Invalid date values!\n");
+        return;
+    }
 
     printf("Enter country: ");
-    scanf("%s", r.country);
+    scanf("%49s", r.country);
+    while ((c = getchar()) != '\n' && c != EOF);
 
     printf("Enter phone number: ");
-    scanf("%s", r.phone);
+    scanf("%19s", r.phone);
+    while ((c = getchar()) != '\n' && c != EOF);
 
     printf("Enter initial balance: ");
-    scanf("%lf", &r.amount);
+    if (scanf("%lf", &r.amount) != 1) {
+        printf("Invalid balance!\n");
+        while ((c = getchar()) != '\n' && c != EOF);
+        return;
+    }
+    while ((c = getchar()) != '\n' && c != EOF);
 
-    printf("Enter account type: ");
-    scanf("%s", r.accountType);
+    // Validate and get account type
+    char inputType[20];
+    const char *validTypes[] = {"savings", "fixed01", "fixed02", "fixed03", "current"};
+    int valid = 0;
+    do {
+        printf("\nAvailable account types:\n");
+        printf(" - savings\n - fixed01\n - fixed02\n - fixed03\n - current\n");
+        printf("Enter account type: ");
+        scanf("%19s", inputType);
+        while ((c = getchar()) != '\n' && c != EOF);
+        toLower(inputType);
+
+        valid = 0;
+        for (int i = 0; i < 5; i++) {
+            if (strcmp(inputType, validTypes[i]) == 0) {
+                valid = 1;
+                strcpy(r.accountType, inputType);
+                break;
+            }
+        }
+        if (!valid) {
+            printf("Invalid account type. Please choose from the list above.\n");
+        }
+    } while (!valid);
+
+    // Format date as YYYY-MM-DD for DB
+    char creationDate[20];
+    snprintf(creationDate, sizeof(creationDate), "%02d-%02d-%04d",
+              r.deposit.month, r.deposit.day, r.deposit.year);
 
     const char *sql = "INSERT INTO accounts "
                       "(user_id, username, account_id, creation_date, country, phone_number, balance, account_type) "
-                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";  // 8 parameters
+                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
 
     sqlite3_stmt *stmt;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
@@ -146,19 +202,14 @@ void createNewAcc(sqlite3 *db, struct User u) {
         return;
     }
 
-    char creationDate[20];
-    snprintf(creationDate, sizeof(creationDate), "%04d-%02d-%02d",
-             r.deposit.year, r.deposit.month, r.deposit.day);
-
-    // Correct parameter bindings
-    sqlite3_bind_int(stmt, 1, u.id);                                // user_id
-    sqlite3_bind_text(stmt, 2, u.name, -1, SQLITE_STATIC);          // username
-    sqlite3_bind_int(stmt, 3, r.accountNbr);                        // account_id
-    sqlite3_bind_text(stmt, 4, creationDate, -1, SQLITE_STATIC);    // creation_date
-    sqlite3_bind_text(stmt, 5, r.country, -1, SQLITE_STATIC);       // country
-    sqlite3_bind_text(stmt, 6, r.phone, -1, SQLITE_STATIC);         // phone_number
-    sqlite3_bind_double(stmt, 7, r.amount);                         // balance
-    sqlite3_bind_text(stmt, 8, r.accountType, -1, SQLITE_STATIC);   // account_type
+    sqlite3_bind_int(stmt, 1, u.id);
+    sqlite3_bind_text(stmt, 2, u.name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 3, r.accountNbr);
+    sqlite3_bind_text(stmt, 4, creationDate, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, r.country, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 6, r.phone, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_double(stmt, 7, r.amount);
+    sqlite3_bind_text(stmt, 8, r.accountType, -1, SQLITE_TRANSIENT);
 
     int rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE) {
@@ -209,21 +260,11 @@ void updateAccountInfo(sqlite3 *db, struct User u) {
         printf("Account not found.\n");
         return;
     }
-
     printf("Updating account %d (current balance: %.2lf)\n", accountId, r.amount);
-
     printf("Enter new country (current: %s): ", r.country);
     scanf("%s", r.country);
-
     printf("Enter new phone number (current: %s): ", r.phone);
     scanf("%s", r.phone);
-
-    printf("Enter new account type (current: %s): ", r.accountType);
-    scanf("%s", r.accountType);
-
-    printf("Enter new balance (current: %.2lf): ", r.amount);
-    scanf("%lf", &r.amount);
-
     // Save updated record
     if (saveAccountToDB(db, u, r))
         printf("Account updated successfully.\n");
@@ -257,26 +298,35 @@ void checkAccountDetails(sqlite3 *db, struct User u) {
     printf("Account Type: %s\n", r.accountType);
 
     // Interest Calculation
-    double interestRate = 0.0;
+double interestRate = 0.0;
+int isSavings = 0;
 
-    if (strcmp(r.accountType, "savings") == 0) {
-        interestRate = 0.07;
-    } else if (strcmp(r.accountType, "fixed01") == 0) {
-        interestRate = 0.04;
-    } else if (strcmp(r.accountType, "fixed02") == 0) {
-        interestRate = 0.05;
-    } else if (strcmp(r.accountType, "fixed03") == 0) {
-        interestRate = 0.08;
-    } else if (strcmp(r.accountType, "current") == 0) {
-        printf("You will not get interests because the account is of type current.\n");
-        return;
-    } else {
-        printf("Unknown account type. Cannot compute interest.\n");
-        return;
-    }
+if (strcmp(r.accountType, "savings") == 0) {
+    interestRate = 0.07;
+    isSavings = 1;
+} else if (strcmp(r.accountType, "fixed01") == 0) {
+    interestRate = 0.04;
+} else if (strcmp(r.accountType, "fixed02") == 0) {
+    interestRate = 0.05;
+} else if (strcmp(r.accountType, "fixed03") == 0) {
+    interestRate = 0.08;
+} else if (strcmp(r.accountType, "current") == 0) {
+    printf("You will not get interests because the account is of type current.\n");
+    return;
+} else {
+    printf("Unknown account type. Cannot compute interest.\n");
+    return;
+}
 
-    double interest = r.amount * interestRate;
+double interest = r.amount * interestRate;
+
+if (isSavings) {
     printf("You will get $%.2lf as interest on day %d of every month.\n", interest, r.deposit.day);
+} else {
+    printf("You will get $%.2lf as interest on %02d/%02d/%04d.\n",
+           interest, r.deposit.month, r.deposit.day, r.deposit.year);
+}
+
 }
 
 void makeTransaction(sqlite3 *db, struct User u) {
