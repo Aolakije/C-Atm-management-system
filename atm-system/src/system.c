@@ -41,7 +41,7 @@ int getAccountFromDB(sqlite3 *db, int accountId, char name[50], struct Record *r
         if (creationDate)
         {
             int year, month, day;
-            sscanf((const char *)creationDate, "%d-%d-%d", &year, &month, &day);
+            sscanf((const char *)creationDate, "%d-%d-%d", &month, &day, &year);
             r->deposit.year = year;
             r->deposit.month = month;
             r->deposit.day = day;
@@ -298,37 +298,42 @@ void checkAccountDetails(sqlite3 *db, struct User u) {
     printf("Account Type: %s\n", r.accountType);
 
     // Interest Calculation
-double interestRate = 0.0;
-int isSavings = 0;
+    double interestRate = 0.0;
+    int isSavings = 0;
 
-if (strcmp(r.accountType, "savings") == 0) {
-    interestRate = 0.07;
-    isSavings = 1;
-} else if (strcmp(r.accountType, "fixed01") == 0) {
-    interestRate = 0.04;
-} else if (strcmp(r.accountType, "fixed02") == 0) {
-    interestRate = 0.05;
-} else if (strcmp(r.accountType, "fixed03") == 0) {
-    interestRate = 0.08;
-} else if (strcmp(r.accountType, "current") == 0) {
-    printf("You will not get interests because the account is of type current.\n");
-    return;
-} else {
-    printf("Unknown account type. Cannot compute interest.\n");
-    return;
+    if (strcmp(r.accountType, "savings") == 0) {
+        interestRate = 0.07;
+        isSavings = 1;
+    } else if (strcmp(r.accountType, "fixed01") == 0) {
+        interestRate = 0.04;
+    } else if (strcmp(r.accountType, "fixed02") == 0) {
+        interestRate = 0.05;
+    } else if (strcmp(r.accountType, "fixed03") == 0) {
+        interestRate = 0.08;
+    } else if (strcmp(r.accountType, "current") == 0) {
+        printf("You will not get interests because the account is of type current.\n");
+        return;
+    } else {
+        printf("Unknown account type. Cannot compute interest.\n");
+        return;
+    }
+
+    double interest = r.amount * interestRate;
+
+    if (isSavings) {
+        // Savings accounts show monthly interest
+        double monthlyInterest = interest / 12;
+        if (r.deposit.day >= 1 && r.deposit.day <= 31) {
+            printf("You will get $%.2lf as interest on day %d of every month.\n",
+                   monthlyInterest, r.deposit.day);
+        } else {
+            printf("Interest calculation date is invalid.\n");
+        }
+    } else {
+        printf("You will get $%.2lf as interest on %02d/%02d/%04d.\n",
+               interest, r.deposit.month, r.deposit.day, r.deposit.year);
+    }
 }
-
-double interest = r.amount * interestRate;
-
-if (isSavings) {
-    printf("You will get $%.2lf as interest on day %d of every month.\n", interest, r.deposit.day);
-} else {
-    printf("You will get $%.2lf as interest on %02d/%02d/%04d.\n",
-           interest, r.deposit.month, r.deposit.day, r.deposit.year);
-}
-
-}
-
 void makeTransaction(sqlite3 *db, struct User u) {
     int accountId;
     printf("Enter account ID for transaction: ");
