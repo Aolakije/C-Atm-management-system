@@ -11,51 +11,76 @@ sqlite3 *db = NULL;
 void mainMenu(struct User u)
 {
     int option;
-    system("clear");
-    printf("\n\n\t\t======= ATM =======\n\n");
-    printf("\n\t\t-->> Feel free to choose one of the options below <<--\n");
-    printf("\n\t\t[1]- Create a new account\n");
-    printf("\n\t\t[2]- Update account information\n");
-    printf("\n\t\t[3]- Check accounts\n");
-    printf("\n\t\t[4]- Check list of owned accounts\n");
-    printf("\n\t\t[5]- Make Transaction\n");
-    printf("\n\t\t[6]- Remove existing account\n");
-    printf("\n\t\t[7]- Transfer ownership\n");
-    printf("\n\t\t[8]- Exit\n");
-    scanf("%d", &option);
+    int choice;
+    do {
+        system("clear");
+        printf("\n\n\t\t======= ATM =======\n\n");
+        printf("\n\t\t-->> Feel free to choose one of the options below <<--\n");
+        printf("\n\t\t[1]- Create a new account\n");
+        printf("\n\t\t[2]- Update account information\n");
+        printf("\n\t\t[3]- Check accounts\n");
+        printf("\n\t\t[4]- Check list of owned accounts\n");
+        printf("\n\t\t[5]- Make Transaction\n");
+        printf("\n\t\t[6]- Remove existing account\n");
+        printf("\n\t\t[7]- Transfer ownership\n");
+        printf("\n\t\t[8]- Exit\n");
+        printf("\nEnter option: ");
 
-    switch (option)
-    {
-    case 1:
-        createNewAcc(db, u);
-        break;
-    case 2:
-        updateAccountInfo(db, u);
-        break;
-    case 3:
-        checkAccountDetails(db, u);
-        break;
-    case 4:
-        checkAllAccounts(db, u);
-        break;
-    case 5:
-        makeTransaction(db, u);
-        break;
-    case 6:
-        removeAccount(db, u);
-        break;
-    case 7:
-        transferOwnership(db, u);
-        break;
-    case 8:
-        exit(0);
-        break;
-    default:
-        printf("Invalid operation!\n");
-        break;
-    }
+        if (scanf("%d", &option) != 1) {
+            while (getchar() != '\n'); // flush invalid input
+            printf("Invalid input. Try again.\n");
+            continue;
+        }
+        while (getchar() != '\n'); // flush input buffer
+
+        switch (option)
+        {
+            case 1:
+                createNewAcc(db, u);
+                break;
+            case 2:
+                updateAccountInfo(db, u);
+                break;
+            case 3:
+                checkAccountDetails(db, u);
+                break;
+            case 4:
+                checkAllAccounts(db, u);
+                break;
+            case 5:
+                makeTransaction(db, u);
+                break;
+            case 6:
+                removeAccount(db, u);
+                break;
+            case 7:
+                transferOwnership(db, u);
+                break;
+            case 8:
+                printf("Exiting...\n");
+                closeDB();
+                exit(0);
+                break;
+            default:
+                printf("Invalid operation!\n");
+                continue;
+        }
+
+        // Navigation prompt right here:
+        printf("\nPress 1 to return to Main Menu, or 0 to Exit: ");
+        while (scanf("%d", &choice) != 1 || (choice != 0 && choice != 1)) {
+            while (getchar() != '\n'); // flush invalid input
+            printf("Invalid input. Please press 1 for Main Menu or 0 to Exit: ");
+        }
+        while (getchar() != '\n'); // flush input buffer
+        if (choice == 0) {
+            printf("Exiting...\n");
+            closeDB();
+            exit(0);
+        }
+        // if choice == 1, loop continues, showing main menu again
+    } while (1);
 }
-
 void initMenu(struct User *u)
 {
     int r = 0;
