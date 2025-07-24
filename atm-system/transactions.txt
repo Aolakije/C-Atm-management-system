@@ -1,0 +1,6 @@
+[2025-07-23 09:46:22] Transfer ownership of account 10001 from user 'Tyc123' (ID 1) to user 'Alice' (ID 2)
+[2025-07-23 09:52:15] Transfer ownership of account 10002 from user 'Alice' (ID 2) to user 'Tyc123' (ID 1) is Succesfull
+[2025-07-23 16:21:09] Transfer ownership of account 10002 from user 'Tyc123' (ID 1) to user 'Alice' (ID 2) is Succesfull
+[2025-07-23 16:37:29] Transfer ownership of account 10001 from user 'Alice' (ID 2) to user 'Tyc123' (ID 1) is Succesfull
+[2025-07-23 18:45:51] Transfer ownership of account 1 from user 'TY' (ID 1) to user 'Degs' (ID 2) is Succesfull
+Alice deleted account 100 (1001.10 savings)
