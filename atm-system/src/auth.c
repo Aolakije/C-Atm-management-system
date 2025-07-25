@@ -185,12 +185,12 @@ int registerMenu(char a[50], char pass[50]) {
     scanf("%19s", phone);
     while ((c = getchar()) != '\n' && c != EOF);
 
-    printf("\n\t\t\t\tChoose account type (Savings, fixed01, fixed02, fixed03, current): ");
+    printf("\n\t\t\t\tChoose account type (savings, fixed01, fixed02, fixed03, current): ");
     scanf("%19s", accountType);
     while ((c = getchar()) != '\n' && c != EOF);
 
     // Validate accountType against allowed list
-    if (strcmp(accountType, "Savings") != 0 &&
+    if (strcmp(accountType, "savings") != 0 &&
         strcmp(accountType, "fixed01") != 0 &&
         strcmp(accountType, "fixed02") != 0 &&
         strcmp(accountType, "fixed03") != 0 &&
