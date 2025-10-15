@@ -4,3 +4,9 @@
 [2025-07-23 16:37:29] Transfer ownership of account 10001 from user 'Alice' (ID 2) to user 'Tyc123' (ID 1) is Succesfull
 [2025-07-23 18:45:51] Transfer ownership of account 1 from user 'TY' (ID 1) to user 'Degs' (ID 2) is Succesfull
 Alice deleted account 100 (1001.10 savings)
+Alice withdrew 500.00 on account 21. New balance: 501.20
+Alice deposited 500000.00 on account 21. New balance: 500501.20
+Alice deleted account 7654 (98765.00 fixed01)
+Alice deleted account 21 (500501.20 savings)
+Marcus deleted account 256 (876545.77 Savings)
+Estelle deleted account 1000010 (2000000.00 Savings)
